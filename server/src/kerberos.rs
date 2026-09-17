@@ -61,16 +61,16 @@ impl State {
 
 fn setup_server_ctx(principal: &[u8]) -> Result<ServerCtx, Error> {
     let desired_mechs = {
-        let mut s = OidSet::new()?;
-        s.add(&GSS_MECH_KRB5)?;
-        s.add(&GSS_MECH_SPNEGO)?;
+        let mut s = OidSet::new();
+        s.add(GSS_MECH_KRB5)?;
+        s.add(GSS_MECH_SPNEGO)?;
         s
     };
-    let name = Name::new(principal, Some(&GSS_NT_KRB5_PRINCIPAL))?;
-    let cname = name.canonicalize(Some(&GSS_MECH_KRB5))?;
+    let name = Name::new(principal, Some(GSS_NT_KRB5_PRINCIPAL))?;
+    let cname = name.canonicalize(Some(GSS_MECH_KRB5))?;
     let server_cred = Cred::acquire(Some(&cname), None, CredUsage::Accept, Some(&desired_mechs))?;
     debug!("Acquired server credentials: {:?}", server_cred.info());
-    Ok(ServerCtx::new(server_cred))
+    Ok(ServerCtx::new(Some(server_cred)))
 }
 
 pub struct AuthenticationData {
@@ -162,7 +162,7 @@ pub async fn authenticate(
             .context("Failed to decode authorization header token as base64")?;
 
         match server_ctx
-            .step(&token)
+            .step(&token, None)
             .context("Failed to perform Kerberos operation")?
         {
             // TODO: should we return Ok in this case ?

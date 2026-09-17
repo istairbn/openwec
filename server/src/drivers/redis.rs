@@ -38,12 +38,12 @@ impl OutputDriver for OutputRedis {
 
         for event in events.iter() {
             let mut redis_cmd = cmd.clone();
-            let mut redis_connection = self.producer.get_multiplexed_tokio_connection().await?;
+            let mut redis_connection = self.producer.get_multiplexed_async_connection().await?;
 
             results.push(async move {
                 redis_cmd
                     .arg(&[self.config.list(), event.as_ref()])
-                    .query_async::<_, Option<u32>>(&mut redis_connection)
+                    .query_async::<Option<u32>>(&mut redis_connection)
                     .await
             });
         }
