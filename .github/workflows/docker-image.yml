@@ -5,6 +5,12 @@ name: Create and publish a Docker image
 on:
   workflow_dispatch:
   push:
+    paths-ignore:
+      - .git*
+      - "**/*.md"
+      - .dockerignore
+      - LICENSE
+      - .github/**
     branches: ['main']
     tags:
       - 'v*'
