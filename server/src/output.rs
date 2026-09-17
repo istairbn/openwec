@@ -249,21 +249,15 @@ mod tests {
     ) -> SubscriptionData {
         let path = format!("{}/{{}}/events", base_dir.display());
         let files_config = FilesConfiguration::new(path);
-        let output = SubscriptionOutput::new(
-            format,
-            SubscriptionOutputDriver::Files(files_config),
-            true,
-        );
+        let output =
+            SubscriptionOutput::new(format, SubscriptionOutputDriver::Files(files_config), true);
         let mut sub_data = SubscriptionData::new("TestOutput", "");
         sub_data.add_output(output);
         sub_data
     }
 
     /// Run the full format → Files-driver pipeline for one format and return the file contents.
-    async fn run_pipeline(
-        base_dir: &std::path::Path,
-        format: SubscriptionOutputFormat,
-    ) -> String {
+    async fn run_pipeline(base_dir: &std::path::Path, format: SubscriptionOutputFormat) -> String {
         let mut output_context = OutputDriversContext::new(&settings::Outputs::default());
 
         // Force the Files background thread to be initialized.
@@ -285,7 +279,9 @@ mod tests {
         // Format the raw event.
         let formatter = super::get_formatter(&format);
         let event_data = EventData::new(Arc::new(EVENT_4688.to_string()), true);
-        let formatted = formatter.format(&metadata, &event_data).expect("format should succeed");
+        let formatted = formatter
+            .format(&metadata, &event_data)
+            .expect("format should succeed");
 
         let metadata_arc = Arc::new(metadata);
         let events: Arc<Vec<Arc<String>>> = Arc::new(vec![formatted]);
@@ -322,7 +318,10 @@ mod tests {
 
         // RawJson wraps the raw XML in a `data` field alongside subscription metadata.
         assert_eq!(json["data"].as_str().unwrap(), EVENT_4688);
-        assert_eq!(json["meta"]["IpAddress"].as_str().unwrap(), "192.168.58.100");
+        assert_eq!(
+            json["meta"]["IpAddress"].as_str().unwrap(),
+            "192.168.58.100"
+        );
         assert_eq!(
             json["meta"]["Principal"].as_str().unwrap(),
             "WIN10$@WINDOMAIN.LOCAL"
@@ -340,16 +339,16 @@ mod tests {
             .unwrap_or_else(|e| panic!("Json output is not valid JSON: {}\n---\n{}", e, line));
 
         assert_eq!(json["System"]["EventID"].as_u64().unwrap(), 4688);
-        assert_eq!(
-            json["System"]["Channel"].as_str().unwrap(),
-            "Security"
-        );
+        assert_eq!(json["System"]["Channel"].as_str().unwrap(), "Security");
         assert_eq!(
             json["System"]["Computer"].as_str().unwrap(),
             "win10.windomain.local"
         );
         // Subscription metadata is embedded in the OpenWEC field.
-        assert_eq!(json["OpenWEC"]["IpAddress"].as_str().unwrap(), "192.168.58.100");
+        assert_eq!(
+            json["OpenWEC"]["IpAddress"].as_str().unwrap(),
+            "192.168.58.100"
+        );
     }
 
     #[tokio::test]
@@ -365,7 +364,10 @@ mod tests {
         assert_eq!(json["EventID"].as_u64().unwrap(), 4688);
         assert_eq!(json["Channel"].as_str().unwrap(), "Security");
         assert_eq!(json["Hostname"].as_str().unwrap(), "win10.windomain.local");
-        assert_eq!(json["OpenWEC"]["IpAddress"].as_str().unwrap(), "192.168.58.100");
+        assert_eq!(
+            json["OpenWEC"]["IpAddress"].as_str().unwrap(),
+            "192.168.58.100"
+        );
     }
 
     #[tokio::test]
@@ -379,10 +381,8 @@ mod tests {
 
         let (_, metadata) = make_subscription_and_metadata(&mut output_context);
 
-        let files_config = FilesConfiguration::new(format!(
-            "{}/batch/{{client}}/events",
-            tmp.path().display()
-        ));
+        let files_config =
+            FilesConfiguration::new(format!("{}/batch/{{client}}/events", tmp.path().display()));
         let driver = SubscriptionOutputDriver::Files(files_config);
         let output = Output::new(&format, &driver, &mut output_context).unwrap();
 
@@ -393,12 +393,21 @@ mod tests {
 
         output.write(Arc::new(metadata), events).await.unwrap();
 
-        let file_path = tmp.path().join("batch").join(CLIENT_SANITIZED).join("events");
+        let file_path = tmp
+            .path()
+            .join("batch")
+            .join(CLIENT_SANITIZED)
+            .join("events");
         let content = std::fs::read_to_string(&file_path).unwrap();
 
         // Each event is written on its own line.
         let lines: Vec<&str> = content.lines().collect();
-        assert_eq!(lines.len(), 3, "expected 3 events in file, got {}", lines.len());
+        assert_eq!(
+            lines.len(),
+            3,
+            "expected 3 events in file, got {}",
+            lines.len()
+        );
         for line in &lines {
             assert_eq!(*line, EVENT_4688);
         }

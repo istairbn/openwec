@@ -495,7 +495,9 @@ pub mod v2 {
                     SubscriptionOutputDriver::UnixDatagram(config.into())
                 }
                 crate::subscription::SubscriptionOutputDriver::Otlp(_) => {
-                    unimplemented!("OTLP output driver is not yet supported for subscription export/import")
+                    unimplemented!(
+                        "OTLP output driver is not yet supported for subscription export/import"
+                    )
                 }
             }
         }

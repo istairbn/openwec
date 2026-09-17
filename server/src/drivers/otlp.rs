@@ -53,13 +53,14 @@ impl OutputOtlp {
         }
 
         let mut exporter = builder.build().with_context(|| {
-            format!("Failed to build OTLP log exporter for endpoint {}", endpoint)
+            format!(
+                "Failed to build OTLP log exporter for endpoint {}",
+                endpoint
+            )
         })?;
         exporter.set_resource(&resource);
 
-        let provider = SdkLoggerProvider::builder()
-            .with_resource(resource)
-            .build();
+        let provider = SdkLoggerProvider::builder().with_resource(resource).build();
         let logger = provider.logger("openwec");
         let scope = InstrumentationScope::builder("openwec").build();
 
@@ -123,8 +124,14 @@ impl OutputDriver for OutputOtlp {
             record.set_severity_number(severity);
             record.set_severity_text(severity_text);
             record.set_body(AnyValue::from(event.to_string()));
-            record.add_attribute("subscription.name", metadata.subscription_name().to_string());
-            record.add_attribute("subscription.uuid", metadata.subscription_uuid().to_string());
+            record.add_attribute(
+                "subscription.name",
+                metadata.subscription_name().to_string(),
+            );
+            record.add_attribute(
+                "subscription.uuid",
+                metadata.subscription_uuid().to_string(),
+            );
             record.add_attribute("client", metadata.client().to_string());
             record.add_attribute("client.address", metadata.addr().to_string());
             if let Some(node) = metadata.node_name() {
@@ -238,9 +245,8 @@ mod tests {
         let output = driver();
 
         let content = r#"<TimeCreated SystemTime="2024-01-02T03:04:05.123Z"/>"#;
-        let expected = SystemTime::from(
-            DateTime::parse_from_rfc3339("2024-01-02T03:04:05.123Z").unwrap(),
-        );
+        let expected =
+            SystemTime::from(DateTime::parse_from_rfc3339("2024-01-02T03:04:05.123Z").unwrap());
         assert_eq!(output.event_timestamp(content), Some(expected));
 
         let content_single = r#"<TimeCreated SystemTime='2024-01-02T03:04:05.123Z'/>"#;
