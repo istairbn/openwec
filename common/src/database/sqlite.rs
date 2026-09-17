@@ -453,12 +453,14 @@ impl Database for SQLiteDatabase {
                         VALUES (?1, ?2, ?3, ?4, ?4, ?4)
                         ON CONFLICT (machine, subscription) DO
                             UPDATE SET last_seen = excluded.last_seen,
-                                last_event_seen = excluded.last_event_seen"#
+                                last_event_seen = excluded.last_event_seen,
+                                ip = excluded.ip"#
         } else {
             r#"INSERT INTO heartbeats(machine, ip, subscription, first_seen, last_seen, last_event_seen)
                         VALUES (?1, ?2, ?3, ?4, ?4, NULL)
                         ON CONFLICT (machine, subscription) DO
-                            UPDATE SET last_seen = excluded.last_seen"#
+                            UPDATE SET last_seen = excluded.last_seen,
+                                ip = excluded.ip"#
         };
 
         let count = self
@@ -468,7 +470,7 @@ impl Database for SQLiteDatabase {
             .interact(move |conn| {
                 conn.execute(
                     query,
-                    params![&machine_owned, &ip, &subscription_owned, now],
+                    params![&machine_owned, &ip, &subscription_owned, now as i64],
                 )
             })
             .await
@@ -492,12 +494,14 @@ impl Database for SQLiteDatabase {
                             VALUES (?1, ?2, ?3, ?4, ?4, ?5)
                             ON CONFLICT (machine, subscription) DO
                                 UPDATE SET last_seen = excluded.last_seen,
-                                    last_event_seen = excluded.last_event_seen"#)?;
+                                    last_event_seen = excluded.last_event_seen,
+                                    ip = excluded.ip"#)?;
             let mut query_without_event = transaction.prepare(
                 r#"INSERT INTO heartbeats(machine, ip, subscription, first_seen, last_seen, last_event_seen)
                             VALUES (?1, ?2, ?3, ?4, ?4, NULL)
                             ON CONFLICT (machine, subscription) DO
-                                UPDATE SET last_seen = excluded.last_seen"#)?;
+                                UPDATE SET last_seen = excluded.last_seen,
+                                    ip = excluded.ip"#)?;
 
             for (key, value) in heartbeats_cloned {
                 match value.last_event_seen {
@@ -508,15 +512,15 @@ impl Database for SQLiteDatabase {
                                     &key.machine,
                                     &value.ip,
                                     &key.subscription,
-                                    &value.last_seen,
-                                    &last_event_seen,
+                                    value.last_seen as i64,
+                                    last_event_seen as i64,
                                 ],
                             )?;
                     }
                     None => {
                         query_without_event
                             .execute(
-                                params![&key.machine, &value.ip, &key.subscription, &value.last_seen],
+                                params![&key.machine, &value.ip, &key.subscription, value.last_seen as i64],
                             )?;
                     }
                 }
@@ -997,6 +1001,17 @@ mod tests {
         let path = temp_file.into_temp_path();
         {
             crate::database::tests::test_heartbeats(db_with_migrations(&path).await?).await?;
+        }
+        path.close()?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_heartbeats_cache() -> Result<()> {
+        let temp_file = tempfile::NamedTempFile::new()?;
+        let path = temp_file.into_temp_path();
+        {
+            crate::database::tests::test_heartbeats_cache(db_with_migrations(&path).await?).await?;
         }
         path.close()?;
         Ok(())
