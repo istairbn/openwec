@@ -9,19 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- OTLP/gRPC output driver: forward Windows events to any OpenTelemetry-compatible collector endpoint, with optional gzip/zstd compression and configurable timeout
+- Support for multiple CA certificates in TLS configuration
+
+### Changed
+
+- Release package build pipeline refactored to run Debian and RPM builds in parallel (matrix strategy), reducing release wall-clock time
+- Debian Bullseye (11) build target replaced by Debian Trixie (13); Bullseye reached end-of-life August 2024
+- Alpine Docker base image upgraded to 3.24
+
+### Fixed
+
+- Upgraded dependencies to resolve RustSec security advisories
+- Adapted to breaking API changes in libgssapi 0.11 and redis 1.7
+- SQLite heartbeat UPSERT was not updating the client IP address on conflict
+
+## [v0.4.0]
+
+### Added
+
 - Add `max_elements` subscription parameter (#185)
 - Add an optional Prometheus endpoint that exposes metrics (#190)
 - Optionally wrap TCP stream in a TLS session in TCP driver (#203)
 - Support for SPNEGO authentication (#307)
 
-## Changed
+### Changed
 
 - Rework subscription filters (#186) (**Warning: this require a databatase migration**)
 - In formats `Json`, `Nxlog` and `RawJson`, `OpenWEC.Principal` is replaced by `OpenWEC.Client` (#186)
 - In `Files` driver, `{principal}` is replaced by `{client}` in `path` config (#186)
 - In access log pattern, `{X(principal)}` is replaced by `{X(client)}` (#186)
 
-## Removed
+### Removed
 
 - Subscription filters can no longer be created nor edited using the cli (#186)
 
