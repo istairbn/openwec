@@ -10,54 +10,64 @@ env:
 
 jobs:
   build:
-    name: build packages
+    name: Build ${{ matrix.target }} package
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: debian-bookworm
+            dockerfile: Dockerfile-debian-bookworm
+            artifact-name: openwec-deb-bookworm-package
+            artifact-path: ./target/debian/*.deb
+            deb-suffix: _deb12
+          - target: debian-trixie
+            dockerfile: Dockerfile-debian-trixie
+            artifact-name: openwec-deb-trixie-package
+            artifact-path: ./target/debian/*.deb
+            deb-suffix: _deb13
+          - target: almalinux-9
+            dockerfile: Dockerfile-almalinux-9
+            artifact-name: openwec-alma-9-package
+            artifact-path: ./target/generate-rpm/*.rpm
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Make debian bookworm package
-      run: |
-          cd build-pkg && \
-          docker build -t openwec-builder:debian-bookworm -f Dockerfile-debian-bookworm . && \
-          docker run -t -u $(id -u):$(id -g) -v $(pwd)/../:/SRC  \
-            --env CARGO_HOME=/SRC/target/.cargo openwec-builder:debian-bookworm \
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        working-directory: build-pkg
+        run: docker build -t openwec-builder:${{ matrix.target }} -f ${{ matrix.dockerfile }} .
+
+      - name: Build Debian package
+        if: startsWith(matrix.target, 'debian')
+        run: |
+          docker run -t -u $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/SRC \
+            --env CARGO_HOME=/SRC/target/.cargo \
+            openwec-builder:${{ matrix.target }} \
             sh -c "cargo build --release --locked && \
-                   cargo deb --no-build --manifest-path=./common/Cargo.toml" && \
-          for i in ../target/debian/*.deb; do mv "$i" "${i/.deb/_deb12.deb}"; done;
-    - name: Upload debian bookworm package
-      uses: actions/upload-artifact@v4
-      with:
-        name: openwec-deb-bookworm-package
-        path: ./target/debian/*.deb
-    - name: Make debian bullseye package
-      run: |
-          cargo clean && \
-          cd build-pkg && \
-          docker build -t openwec-builder:debian-bullseye -f Dockerfile-debian-bullseye . && \
-          docker run -t -u $(id -u):$(id -g) -v $(pwd)/../:/SRC  \
-            --env CARGO_HOME=/SRC/target/.cargo openwec-builder:debian-bullseye \
-            sh -c "cargo build --release --locked && \
-                   cargo deb --no-build --manifest-path=./common/Cargo.toml" && \
-          for i in ../target/debian/*.deb; do mv "$i" "${i/.deb/_deb11.deb}"; done;
-    - name: Upload debian bullseye package
-      uses: actions/upload-artifact@v4
-      with:
-        name: openwec-deb-bullseye-package
-        path: ./target/debian/*.deb
-    - name: Make almalinux 9 package
-      run: |
-          cargo clean && \
-          cd build-pkg && \
-          docker build -t openwec-builder:almalinux-9 -f Dockerfile-almalinux-9 . && \
-          docker run -t -u $(id -u):$(id -g) -v $(pwd)/../:/SRC  \
-            --env CARGO_HOME=/SRC/target/.cargo openwec-builder:almalinux-9 \
+                   cargo deb --no-build --manifest-path=./common/Cargo.toml"
+          for i in ./target/debian/*.deb; do mv "$i" "${i/.deb/${{ matrix.deb-suffix }}.deb}"; done
+
+      - name: Build RPM package
+        if: matrix.target == 'almalinux-9'
+        run: |
+          docker run -t -u $(id -u):$(id -g) \
+            -v ${{ github.workspace }}:/SRC \
+            --env CARGO_HOME=/SRC/target/.cargo \
+            openwec-builder:${{ matrix.target }} \
             sh -c "cargo build --release --locked && \
                    strip -s target/release/openwec{d,} && \
-                   cargo generate-rpm --package common --metadata-overwrite=./common/Cargo.toml --set-metadata=\"release='1.el9'\""
-    - name: Upload almalinux 9 package
-      uses: actions/upload-artifact@v4
-      with:
-        name: openwec-alma-9-package
-        path: ./target/generate-rpm/*.rpm
+                   cargo generate-rpm --package common \
+                     --metadata-overwrite=./common/Cargo.toml \
+                     --set-metadata=\"release='1.el9'\""
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-path }}
+
   # Need to select "Read and write permissions" under Actions / General / Workflow Permissions
   release:
     name: Github release draft
@@ -71,10 +81,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: openwec-deb-bookworm-package
-      - name: Download debian bullseye package
+      - name: Download debian trixie package
         uses: actions/download-artifact@v4
         with:
-          name: openwec-deb-bullseye-package
+          name: openwec-deb-trixie-package
       - name: Download almalinux 9 package
         uses: actions/download-artifact@v4
         with:
@@ -83,7 +93,7 @@ jobs:
         id: artifacts_names
         run: |
           echo "U_PKG_DEB_BOOKWORM=$(ls openwec*_deb12.deb)" >> "$GITHUB_OUTPUT" && \
-          echo "U_PKG_DEB_BULLSEYE=$(ls openwec*_deb11.deb)" >> "$GITHUB_OUTPUT" && \
+          echo "U_PKG_DEB_TRIXIE=$(ls openwec*_deb13.deb)" >> "$GITHUB_OUTPUT" && \
           echo "U_PKG_ALMA_9=$(ls openwec*el9*.rpm)" >> "$GITHUB_OUTPUT"
       - name: Create draft release
         uses: softprops/action-gh-release@v2
@@ -91,5 +101,5 @@ jobs:
           draft: true
           files: |
             ${{ steps.artifacts_names.outputs.U_PKG_DEB_BOOKWORM }}
-            ${{ steps.artifacts_names.outputs.U_PKG_DEB_BULLSEYE }}
+            ${{ steps.artifacts_names.outputs.U_PKG_DEB_TRIXIE }}
             ${{ steps.artifacts_names.outputs.U_PKG_ALMA_9 }}
