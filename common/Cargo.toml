@@ -1,9 +1,9 @@
 [package]
 name = "common"
-version = "0.3.0"
-edition = "2021"
+version = "0.4.0"
+edition = "2026"
 # Used by cargo-deb
-homepage = "https://github.com/cea-sec/openwec"
+homepage = "https://github.com/istairbn/openwec"
 description = "A Windows Event Collector server using WEF for GNU/Linux"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
