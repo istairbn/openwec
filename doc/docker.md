@@ -14,8 +14,8 @@ The `openwec` container image comes in two flavors: the default, Debian-based im
 
 Example:
 ```bash
-$ docker pull ghcr.io/cea-sec/openwec:latest
-$ docker pull ghcr.io/cea-sec/openwec:latest-alpine
+$ docker pull ghcr.io/istairbn/openwec:latest
+$ docker pull ghcr.io/istairbn/openwec:latest-alpine
 ```
 
 ### Building the image by yourself
@@ -152,5 +152,5 @@ $ docker run --rm -it \
     -v ./openwec.keytab:/etc/openwec.keytab:ro \
     -v ./conf/:/etc/openwec.d/:ro \
     -p 5985:5985 \
-    ghcr.io/cea-sec/openwec:latest
+    ghcr.io/istairbn/openwec:latest
 ```
