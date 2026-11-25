@@ -23,7 +23,7 @@ mime = "0.3.17"
 quick-xml = "0.42.0"
 roxmltree = "0.21.1"
 tokio = { version = "1.53.1", features = ["full"] }
-rdkafka = { version = "0.39.0", features = ["zstd", "libz", "external-lz4", "ssl", "sasl", "gssapi"] }
+rdkafka = { version = "0.40.0", features = ["zstd", "libz", "external-lz4", "ssl", "sasl", "gssapi"] }
 regex = "1.13.1"
 uuid = { version = "1.26.1", features = ["v4", "fast-rng"] }
 serde = { version = "1.0.229", features = ["derive", "rc"] }
@@ -54,9 +54,9 @@ leon = "3.0.3"
 metrics = "0.24.6"
 metrics-exporter-prometheus = { version = "0.18.3", features = ["http-listener"] }
 url = "2.5.8"
-opentelemetry = "0.32"
-opentelemetry_sdk = { version = "0.32", features = ["logs", "rt-tokio"] }
-opentelemetry-otlp = { version = "0.32", default-features = false, features = ["grpc-tonic", "gzip-tonic", "zstd-tonic", "logs"] }
+opentelemetry = "0.33"
+opentelemetry_sdk = { version = "0.33", features = ["logs", "rt-tokio"] }
+opentelemetry-otlp = { version = "0.33", default-features = false, features = ["grpc-tonic", "gzip-tonic", "zstd-tonic", "logs"] }
 
 [dev-dependencies]
 tempfile = "3"
